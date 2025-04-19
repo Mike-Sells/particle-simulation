@@ -4,6 +4,7 @@
 
 
 #define TIME_STEP 1000 //ms
+#define NUMBER_OF_PARTICLES 10
 #define MIN_XY 0
 #define MAX_XY 100
 
@@ -23,7 +24,7 @@ typedef struct {
 
 /**
 * Function: new_particle
-*   creates an instance of the structure Particle
+*   creates an instance of the structure Particle and adds it to an array of particles
 *
 * @param void
 *
@@ -43,6 +44,8 @@ Particle* new_particle(void)
     ptr->velocity[0] = 1.0f;
     ptr->velocity[1] = 1.0f;
     ptr->radius = 1.0f;
+
+
 
     return ptr;
 }
@@ -78,8 +81,18 @@ void update_position(Particle* particle)
 */
 int main(void) 
 {
-    Particle* p1 = new_particle();
- 
-    free(p1);
-    return EXIT_SUCCESS;
+    Particle** particles = malloc(NUMBER_OF_PARTICLES * sizeof(Particle*));
+
+    for (int i = 0; i < NUMBER_OF_PARTICLES; i++) // deallocates particles to the array
+    {
+        particles[i] = new_particle();
+    }
+
+    for (int i = 0; i < NUMBER_OF_PARTICLES; i++) // deallocates the individual particles from memory
+    {
+        free(particles[i]);
+    }
+    // deallocates the array from memory
+    free(particles);
+
 }
