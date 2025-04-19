@@ -61,10 +61,10 @@ void update_position(Particle* particle)
     particle->displacement[0] += (particle->velocity[0] / TIME_STEP);
     particle->displacement[1] += (particle->velocity[1] / TIME_STEP);
 
-    if (particle->displacement[0] < MIN_XY || particle->dispalcement[0] < MIN_XY) 
-        particle->velocity[0] = -particle->velocity;
+    if (particle->displacement[0] < MIN_XY || particle->displacement[0] < MIN_XY) 
+        particle->velocity[0] = -particle->velocity[0];
 
-    if (particle->displacement[1] < MIN_XY || particle->dispalcement[1] < MIN_XY) 
+    if (particle->displacement[1] < MIN_XY || particle->displacement[1] < MIN_XY) 
         particle->velocity[1] = -particle->velocity[1];
 }
 
