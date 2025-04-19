@@ -122,7 +122,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=particle_simulation
+CMAKE_PROJECT_NAME:STATIC=particle-simulation
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=/usr/bin/ranlib
@@ -188,6 +188,27 @@ CMAKE_TAPI:FILEPATH=CMAKE_TAPI-NOTFOUND
 // during the make.  This is useful for debugging only. With Visual
 // Studio IDE projects all commands are done without /nologo.
 CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
+
+//Value Computed by CMake
+ParticlesDemo_BINARY_DIR:STATIC=/home/mike/Documents/particle-simulation/build
+
+//Value Computed by CMake
+ParticlesDemo_IS_TOP_LEVEL:STATIC=ON
+
+//Value Computed by CMake
+ParticlesDemo_SOURCE_DIR:STATIC=/home/mike/Documents/particle-simulation
+
+//The directory containing a CMake configuration file for SDL2.
+SDL2_DIR:PATH=/usr/lib/cmake/SDL2
+
+//Value Computed by CMake
+particle-simulation_BINARY_DIR:STATIC=/home/mike/Documents/particle-simulation/build
+
+//Value Computed by CMake
+particle-simulation_IS_TOP_LEVEL:STATIC=ON
+
+//Value Computed by CMake
+particle-simulation_SOURCE_DIR:STATIC=/home/mike/Documents/particle-simulation
 
 //Value Computed by CMake
 particle_simulation_BINARY_DIR:STATIC=/home/mike/Documents/particle-simulation/build
