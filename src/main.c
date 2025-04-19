@@ -82,14 +82,14 @@ void update_position(Particle* particle)
 */
 int main(void) 
 {
-    Particle** particles = malloc(NUMBER_OF_PARTICLES * sizeof(Particle*));
+    Particle** particles = malloc(NUMBER_OF_PARTICLES * sizeof(Particle*)); 
 
     for (int i = 0; i < NUMBER_OF_PARTICLES; i++) // deallocates particles to the array
     {
         particles[i] = new_particle();
     }
 
-    
+
 
     for (int i = 0; i < NUMBER_OF_PARTICLES; i++) // deallocates the individual particles from memory
     {
