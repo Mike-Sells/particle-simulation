@@ -6,6 +6,7 @@
 #define TIME_STEP 1000 /**< milliseconds */
 #define FPS 60 /**< frames per second */
 #define NUMBER_OF_PARTICLES 10 /**< number of particles */
+#define RADIUS 5/**< radius of the particles */
 #define MIN_XY 0 /**< minimum screen coordinate */
 #define MAX_XY 800 /**< maximum screen coordinate (screen width/height) */
 
@@ -17,7 +18,6 @@
 typedef struct {
     float displacement[2];
     float velocity[2];
-    float radius;
 } Particle;
 
 /**
@@ -40,7 +40,6 @@ Particle* new_particle(void)
     ptr->displacement[1] = rand() % MAX_XY;
     ptr->velocity[0] = ((rand() % 200) - 100) / 100.0f; /**< random velocity between -1.0 and 1.0 */
     ptr->velocity[1] = ((rand() % 200) - 100) / 100.0f;
-    ptr->radius = 5.0f + (rand() % 5); /**< random radius between 5 and 10 */
 
     return ptr;
 }
@@ -73,9 +72,8 @@ void update_position(Particle* particle)
  * @param renderer SDL_Renderer to draw on.
  * @param centreX X coordinate of circle center.
  * @param centreY Y coordinate of circle center.
- * @param radius Radius of the circle.
  */
-void DrawCircle(SDL_Renderer* renderer, int32_t centreX, int32_t centreY, int32_t radius)
+ void DrawCircle(SDL_Renderer* renderer, int32_t centreX, int32_t centreY, int32_t radius)
 {
     const int32_t diameter = (radius * 2);
 
@@ -181,7 +179,7 @@ int main(void)
             DrawCircle(ren,
                        (int)particles[i]->displacement[0],
                        (int)particles[i]->displacement[1],
-                       (int)particles[i]->radius);
+                       RADIUS);
         }
 
         SDL_RenderPresent(ren);
