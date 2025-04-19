@@ -20,33 +20,35 @@ typedef struct {
 * Function: new_particle
 *   creates an instance of the structure Particle
 *
+* @param void
+*
 * return: pointer to the particle in memory
 */
 Particle* new_particle(void) {
-    Particle* particle_ptr = malloc(sizeof(Particle));
-    if (particle_ptr == NULL) {
+    Particle* ptr = malloc(sizeof(Particle));
+    if (ptr == NULL) {
         printf("malloc error...\n");
         return NULL;
     }
     
-    particle_ptr->displacement[0] = 0.0f;
-    particle_ptr->displacement[1] = 0.0f;
-    particle_ptr->velocity[0] = 1.0f;
-    particle_ptr->velocity[1] = 1.0f;
-    particle_ptr->radius = 1.0f;
+    ptr->displacement[0] = 0.0f;
+    ptr->displacement[1] = 0.0f;
+    ptr->velocity[0] = 1.0f;
+    ptr->velocity[1] = 1.0f;
+    ptr->radius = 1.0f;
 
-    return particle_ptr;
+    return ptr;
 }
 
+/**
+* Function: main
+*   contains logic for the main flow of the program
+* 
+* @param void 
+*/
 int main(void) {
     Particle* p1 = new_particle();
-    if (p1 != NULL) {
-        printf("Particle created!\n");
-        printf("Displacement: (%f, %f)\n", p1->displacement[0], p1->displacement[1]);
-        printf("Velocity: (%f, %f)\n", p1->velocity[0], p1->velocity[1]);
-        printf("Radius: %f\n", p1->radius);
-    }
-
+ 
     free(p1);
-    return 0;
+    return EXIT_SUCCESS;
 }
