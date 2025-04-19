@@ -64,7 +64,7 @@ void update_position(Particle* particle)
 }
 
 /**
- * Function: DrawCircle
+ * Function: DrawFilledCircle
  * 
  * Draws a circle on the SDL renderer using the midpoint circle algorithm.
  * SDL2 does not provide a built-in circle drawing function.
@@ -73,43 +73,37 @@ void update_position(Particle* particle)
  * @param centreX X coordinate of circle center.
  * @param centreY Y coordinate of circle center.
  */
- void DrawCircle(SDL_Renderer* renderer, int32_t centreX, int32_t centreY, int32_t radius)
-{
-    const int32_t diameter = (radius * 2);
-
-    int32_t x = (radius - 1);
-    int32_t y = 0;
-    int32_t tx = 1;
-    int32_t ty = 1;
-    int32_t error = (tx - diameter);
-
-    while (x >= y)
-    {
-        /* Draw the 8 octants */
-        SDL_RenderDrawPoint(renderer, centreX + x, centreY - y);
-        SDL_RenderDrawPoint(renderer, centreX + x, centreY + y);
-        SDL_RenderDrawPoint(renderer, centreX - x, centreY - y);
-        SDL_RenderDrawPoint(renderer, centreX - x, centreY + y);
-        SDL_RenderDrawPoint(renderer, centreX + y, centreY - x);
-        SDL_RenderDrawPoint(renderer, centreX + y, centreY + x);
-        SDL_RenderDrawPoint(renderer, centreX - y, centreY - x);
-        SDL_RenderDrawPoint(renderer, centreX - y, centreY + x);
-
-        if (error <= 0)
-        {
-            ++y;
-            error += ty;
-            ty += 2;
-        }
-        if (error > 0)
-        {
-            --x;
-            tx += 2;
-            error += (tx - diameter);
-        }
-    }
-}
-
+ void DrawFilledCircle(SDL_Renderer* renderer, int32_t centreX, int32_t centreY, int32_t radius)
+ {
+     int32_t x = radius;
+     int32_t y = 0;
+     int32_t tx = 1;
+     int32_t ty = 1;
+     int32_t error = (tx - radius * 2);
+ 
+     while (x >= y)
+     {
+         // Draw horizontal lines for every y position between the top and bottom of the circle
+         SDL_RenderDrawLine(renderer, centreX - x, centreY + y, centreX + x, centreY + y);
+         SDL_RenderDrawLine(renderer, centreX - x, centreY - y, centreX + x, centreY - y);
+         SDL_RenderDrawLine(renderer, centreX - y, centreY + x, centreX + y, centreY + x);
+         SDL_RenderDrawLine(renderer, centreX - y, centreY - x, centreX + y, centreY - x);
+ 
+         if (error <= 0)
+         {
+             ++y;
+             error += ty;
+             ty += 2;
+         }
+         if (error > 0)
+         {
+             --x;
+             tx += 2;
+             error += (tx - radius * 2);
+         }
+     }
+ }
+ 
 /**
  * Function: main
  * 
@@ -176,7 +170,7 @@ int main(void)
         SDL_SetRenderDrawColor(ren, 255, 0, 0, 255); /**< red particles */
         for (int i = 0; i < NUMBER_OF_PARTICLES; i++) 
         {
-            DrawCircle(ren,
+            DrawFilledCircle(ren,
                        (int)particles[i]->displacement[0],
                        (int)particles[i]->displacement[1],
                        RADIUS);
