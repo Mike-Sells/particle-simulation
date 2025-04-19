@@ -10,12 +10,33 @@
 * float radius determins the size of the shown particle
 */
 
-typedef struct Particle {
+typedef struct {
     float[2] displacement;
     float[2] velocity;
     float radius;
-} p;
+} Particle;
+
+/**
+* Function: new_particle
+*   creates and instance of the structure particle
+*
+*
+*
+*/
+
+Particle* new_particle(int particle_ptr) {
+    Particle* particle_ptr = malloc(sizeof(Particle));
+    if (p1 == NULL) {
+        printf("malloc error...");
+    } else {
+        p1->displacement = {0,0};
+        p1->velocity = {1,1};
+        p1->radius = 1;
+    }
+    return particle_ptr;
+}
 
 int main(void) {
-
+   
+    return 0;
 }
