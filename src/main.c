@@ -4,6 +4,7 @@
 
 
 #define TIME_STEP 1000 //ms
+#define FPS 60 
 #define NUMBER_OF_PARTICLES 10
 #define MIN_XY 0
 #define MAX_XY 100
@@ -88,11 +89,12 @@ int main(void)
         particles[i] = new_particle();
     }
 
+    
+
     for (int i = 0; i < NUMBER_OF_PARTICLES; i++) // deallocates the individual particles from memory
     {
         free(particles[i]);
     }
     // deallocates the array from memory
     free(particles);
-
 }
