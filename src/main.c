@@ -6,6 +6,7 @@
 #define TIME_STEP 1000 /**< milliseconds */
 #define FPS 60 /**< frames per second */
 #define NUMBER_OF_PARTICLES 10 /**< number of particles */
+#define GRAVITATIONAL_ACCELERATION 9.81f
 #define RADIUS 5/**< radius of the particles */
 #define MIN_XY 0 /**< minimum screen coordinate */
 #define MAX_XY 800 /**< maximum screen coordinate (screen width/height) */
@@ -18,6 +19,7 @@
 typedef struct {
     float displacement[2];
     float velocity[2];
+    float acceleration[2];
 } Particle;
 
 /**
@@ -40,6 +42,8 @@ Particle* new_particle(void)
     ptr->displacement[1] = rand() % MAX_XY;
     ptr->velocity[0] = ((rand() % 200) - 100) / 100.0f; /**< random velocity between -1.0 and 1.0 */
     ptr->velocity[1] = ((rand() % 200) - 100) / 100.0f;
+    ptr->acceleration[0] = 0;
+    ptr->acceleration[1] = GRAVITATIONAL_ACCELERATION;
 
     return ptr;
 }
@@ -72,14 +76,15 @@ void update_position(Particle* particle)
  * @param renderer SDL_Renderer to draw on.
  * @param centreX X coordinate of circle center.
  * @param centreY Y coordinate of circle center.
+ * @param radius radius of the circle to be drawn
  */
- void DrawFilledCircle(SDL_Renderer* renderer, int32_t centreX, int32_t centreY, int32_t radius)
+ void DrawFilledCircle(SDL_Renderer* renderer, int centreX, int centreY, int radius)
  {
-     int32_t x = radius;
-     int32_t y = 0;
-     int32_t tx = 1;
-     int32_t ty = 1;
-     int32_t error = (tx - radius * 2);
+     int x = radius;
+     int y = 0;
+     int tx = 1;
+     int ty = 1;
+     int error = (tx - radius * 2);
  
      while (x >= y)
      {
@@ -164,10 +169,10 @@ int main(void)
         }
 
         /* Render frame */
-        SDL_SetRenderDrawColor(ren, 255, 255, 255, 255); /**< white background */
+        SDL_SetRenderDrawColor(ren, 255, 255, 255, 255); /* white background */
         SDL_RenderClear(ren);
 
-        SDL_SetRenderDrawColor(ren, 255, 0, 0, 255); /**< red particles */
+        SDL_SetRenderDrawColor(ren, 255, 0, 0, 255); /* red particles */
         for (int i = 0; i < NUMBER_OF_PARTICLES; i++) 
         {
             DrawFilledCircle(ren,
@@ -178,7 +183,7 @@ int main(void)
 
         SDL_RenderPresent(ren);
 
-        SDL_Delay(1000 / FPS);
+        SDL_Delay(TIME_STEP / FPS);
     }
 
     /* Cleanup memory */
