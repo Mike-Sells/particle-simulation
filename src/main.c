@@ -6,7 +6,7 @@
 #define TIME_STEP 1000 /**< milliseconds */
 #define FPS 60 /**< frames per second */
 #define NUMBER_OF_PARTICLES 10 /**< number of particles */
-#define GRAVITATIONAL_ACCELERATION float -9.81f
+#define GRAVITATIONAL_ACCELERATION -9.81f
 #define RADIUS 10/**< radius of the particles */
 #define MIN_XY 0 /**< minimum screen coordinate */
 #define MAX_XY 800 /**< maximum screen coordinate (screen width/height) */
