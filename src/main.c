@@ -6,8 +6,8 @@
 #define TIME_STEP 1000 /**< milliseconds */
 #define FPS 60 /**< frames per second */
 #define NUMBER_OF_PARTICLES 10 /**< number of particles */
-#define GRAVITATIONAL_ACCELERATION -9.81f
-#define RADIUS 5/**< radius of the particles */
+#define GRAVITATIONAL_ACCELERATION float -9.81f
+#define RADIUS 10/**< radius of the particles */
 #define MIN_XY 0 /**< minimum screen coordinate */
 #define MAX_XY 800 /**< maximum screen coordinate (screen width/height) */
 
@@ -113,7 +113,7 @@ void update_position(Particle* particle)
  * Initializes SDL2, creates the window and renderer, spawns particles,
  * updates and draws them every frame until the window is closed.
  * 
- * @return Exit status code (0 if successful).
+ * @return Exit status code
  */
 int main(void) 
 {
