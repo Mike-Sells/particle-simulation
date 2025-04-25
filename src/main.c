@@ -2,9 +2,9 @@
     #include <stdlib.h>
     #include <SDL2/SDL.h> // Graphics lib
 
-    #define FPS 60
+    #define FPS 240
     #define NUMBER_OF_PARTICLES 10 
-    #define GRAVITATIONAL_ACCELERATION -9.81f // acceleration due to gravity (earths gravitational constant)
+    #define GRAVITATIONAL_ACCELERATION 9.81f // acceleration due to gravity (earths gravitational constant)
     #define RADIUS 10 // radius of each particle in pixles
     #define MIN_XY 0
     #define MAX_XY 800
@@ -51,7 +51,7 @@
     * The particle's position is updated using its current velocity, and the velocity is updated
     * with the gravitational acceleration over the given time step.
     * The function also handles boundary conditions by inverting the velocity if the particle hits
-    * the edges of the window.
+    * the edges of the window. 
     *
     * @param particle Pointer to the particle to be updated
     * @param delta_time Time step (in seconds or frames) to ensure proper velocity/acceleration calculation
@@ -59,20 +59,32 @@
     */
     void update_position(Particle* particle, float delta_time) 
     {
-        // Account for the affects of velocity with respect to time
+        /* Apply gravity to vertical component of velocity */
         particle->velocity[1] += GRAVITATIONAL_ACCELERATION * delta_time;
-
-        // Increment the x and y displacements by the instantanious velocity
+    
+        /* Update position  of particle*/
         particle->displacement[0] += particle->velocity[0];
         particle->displacement[1] += particle->velocity[1];
-
-        // Negates the velocity if ball hits MIN, MAX boundary of window
-        if (particle->displacement[0] <= MIN_XY || particle->displacement[0] >= MAX_XY)
+    
+        /* Ensure particle cannot go beyond the bounds in the x position*/
+        if (particle->displacement[0] < MIN_XY + RADIUS) {
+            particle->displacement[0] = MIN_XY + RADIUS;
             particle->velocity[0] = -particle->velocity[0];
-        if (particle->displacement[1] <= MIN_XY || particle->displacement[1] >= MAX_XY)
+        } else if (particle->displacement[0] > MAX_XY - RADIUS) {
+            particle->displacement[0] = MAX_XY - RADIUS;
+            particle->velocity[0] = -particle->velocity[0];
+        }
+    
+        /* Ensure the particle cannot go beyond the bounds in the y position */
+        if (particle->displacement[1] < MIN_XY + RADIUS) {
+            particle->displacement[1] = MIN_XY + RADIUS;
             particle->velocity[1] = -particle->velocity[1];
+        } else if (particle->displacement[1] > MAX_XY - RADIUS) {
+            particle->displacement[1] = MAX_XY - RADIUS;
+            particle->velocity[1] = -particle->velocity[1];
+        }
     }
-
+    
     /** 
     * Function: DrawFilledCircle
     *
@@ -160,7 +172,7 @@
 
         int quit = 0; // exit_flag
         SDL_Event e;
-        float delta_time = 1.0f / FPS; // change in time from previous frame
+        uint32_t previous_ticks = SDL_GetTicks();
 
         /* Main simulation loop */
         while (!quit)
@@ -173,6 +185,11 @@
                     quit = 1;
                 }
             }
+
+            /* calculates the time between frames */
+            uint32_t current_ticks = SDL_GetTicks();
+            float delta_time = (current_ticks - previous_ticks) / 1000.0f; // in seconds
+            previous_ticks = current_ticks;
 
             /* Update all particles */
             for (int i = 0; i < NUMBER_OF_PARTICLES; i++) 
