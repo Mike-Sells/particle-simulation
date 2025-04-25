@@ -6,7 +6,7 @@
 #define TIME_STEP 1000 /**< milliseconds */
 #define FPS 60 /**< frames per second */
 #define NUMBER_OF_PARTICLES 10 /**< number of particles */
-#define GRAVITATIONAL_ACCELERATION 9.81f
+#define GRAVITATIONAL_ACCELERATION -9.81f
 #define RADIUS 5/**< radius of the particles */
 #define MIN_XY 0 /**< minimum screen coordinate */
 #define MAX_XY 800 /**< maximum screen coordinate (screen width/height) */
@@ -19,7 +19,6 @@
 typedef struct {
     float displacement[2];
     float velocity[2];
-    float acceleration[2];
 } Particle;
 
 /**
@@ -34,7 +33,7 @@ Particle* new_particle(void)
     Particle* ptr = malloc(sizeof(Particle));
     if (ptr == NULL) 
     {
-        printf("malloc error...\n");
+        printf("MALLOC FAILED\n");
         return NULL;
     }
     
@@ -42,8 +41,6 @@ Particle* new_particle(void)
     ptr->displacement[1] = rand() % MAX_XY;
     ptr->velocity[0] = ((rand() % 200) - 100) / 100.0f; /**< random velocity between -1.0 and 1.0 */
     ptr->velocity[1] = ((rand() % 200) - 100) / 100.0f;
-    ptr->acceleration[0] = 0;
-    ptr->acceleration[1] = GRAVITATIONAL_ACCELERATION;
 
     return ptr;
 }
@@ -58,6 +55,7 @@ Particle* new_particle(void)
  */
 void update_position(Particle* particle) 
 {
+    particle->velocity[1] += GRAVITATIONAL_ACCELERATION;
     particle->displacement[0] += particle->velocity[0];
     particle->displacement[1] += particle->velocity[1];
 
