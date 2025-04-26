@@ -126,10 +126,10 @@ void update_position(Particle* particle, float delta_time)
 
             // Reflect velocity at collision
             if (tx < ty) {
-                particle->velocity[0] *= -1; // X collision
+                particle->velocity[0] *= -0.9f; // X collision
             } else { 
-                particle->velocity[1] *= -1;
-            } // Y collision
+                particle->velocity[1] *= -0.9f; // Y collision
+            } 
         }
     }
 }
