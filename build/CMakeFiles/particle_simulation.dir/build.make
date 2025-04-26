@@ -96,7 +96,6 @@ particle_simulation_EXTERNAL_OBJECTS =
 particle_simulation: CMakeFiles/particle_simulation.dir/src/main.c.o
 particle_simulation: CMakeFiles/particle_simulation.dir/build.make
 particle_simulation: CMakeFiles/particle_simulation.dir/compiler_depend.ts
-particle_simulation: /usr/lib/libSDL2main.a
 particle_simulation: /usr/lib/libSDL2-2.0.so.0.3200.54
 particle_simulation: CMakeFiles/particle_simulation.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/mike/Documents/particle-simulation/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking C executable particle_simulation"

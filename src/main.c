@@ -6,7 +6,7 @@
 #define FPS 240
 #define NUMBER_OF_PARTICLES 10 
 #define PIXELS_PER_METER 100.0f // 100 pixels == 1 meter
-#define GRAVITATIONAL_ACCELERATION 9.81f * PIXELS_PER_METER // acceleration due to gravity (earths gravitational constant)
+#define GRAVITATIONAL_ACCELERATION (9.81f * PIXELS_PER_METER) // acceleration due to gravity (earths gravitational constant)
 #define RADIUS 10 // radius of each particle in pixels
 #define WINDOW_HEIGHT 800
 #define WINDOW_WIDTH 1200
@@ -118,19 +118,18 @@ void update_position(Particle* particle, float delta_time)
             particle->displacement[0] += particle->velocity[0] * remaining_time;
             particle->displacement[1] += particle->velocity[1] * remaining_time;
             remaining_time = 0;
-        } 
-        else 
-        {
+        } else {
             // Move to collision point
             particle->displacement[0] += particle->velocity[0] * t;
             particle->displacement[1] += particle->velocity[1] * t;
             remaining_time -= t;
 
             // Reflect velocity at collision
-            if (tx < ty) 
+            if (tx < ty) {
                 particle->velocity[0] *= -1; // X collision
-            else 
-                particle->velocity[1] *= -1; // Y collision
+            } else { 
+                particle->velocity[1] *= -1;
+            } // Y collision
         }
     }
 }
