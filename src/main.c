@@ -3,10 +3,13 @@
 #include <math.h>   
 #include <SDL2/SDL.h> // Graphics lib
 
+#define LOG_ERR(msg) fprintf(stderr, "ERROR: %s | SDL: %s\n", msg, SDL_GetError())
 #define FPS 240
-#define NUMBER_OF_PARTICLES 10 
+#define NUMBER_OF_PARTICLES 100
 #define PIXELS_PER_METER 100.0f // 100 pixels == 1 meter
 #define GRAVITATIONAL_ACCELERATION (9.81f * PIXELS_PER_METER) // acceleration due to gravity (earths gravitational constant)
+#define DAMPENING 0.9f // causes collisions to be inelastic
+#define MAX_ITERATIONS 5 // max iterations for the continuous collision detection
 #define RADIUS 10 // radius of each particle in pixels
 #define WINDOW_HEIGHT 800
 #define WINDOW_WIDTH 1200
@@ -31,8 +34,8 @@ typedef struct {
 */
 void init_particle(Particle* particle) 
 {
-    particle->displacement[0] = rand() % WINDOW_WIDTH; /* x displacement in range of the window size */
-    particle->displacement[1] = rand() % WINDOW_HEIGHT; /* y displacement in range of the window size */
+    particle->displacement[0] = rand() % WINDOW_WIDTH - RADIUS; /* x displacement in range of the window size */
+    particle->displacement[1] = rand() % WINDOW_HEIGHT - RADIUS; /* y displacement in range of the window size */
     particle->velocity[0] = ((rand() % 200) - 100) / 10.0f * PIXELS_PER_METER; /* x velocity -1f < x < 0.99f */
     particle->velocity[1] = ((rand() % 200) - 100) / 10.0f * PIXELS_PER_METER; /* x velocity -1f < x < 0.99f */
 }
@@ -56,12 +59,12 @@ void init_particle(Particle* particle)
 void update_position(Particle* particle, float delta_time) 
 {
     // Apply gravity once per frame (simplification)
+    // @TODO apply gravity continuously
     particle->velocity[1] += GRAVITATIONAL_ACCELERATION * delta_time;
 
     float remaining_time = delta_time;
-    const int max_iterations = 5; // Prevent infinite loops
 
-    for (int iter = 0; iter < max_iterations && remaining_time > 0; iter++) 
+    for (int i = 0; i < MAX_ITERATIONS && remaining_time > 0; i++) 
     {
         float tentative_x = particle->displacement[0] + particle->velocity[0] * remaining_time;
         float tentative_y = particle->displacement[1] + particle->velocity[1] * remaining_time;
@@ -98,9 +101,7 @@ void update_position(Particle* particle, float delta_time)
                 {
                     ty = (boundary - particle->displacement[1]) / particle->velocity[1];
                 }
-            } 
-            else 
-            {
+            } else {
                 float boundary = RADIUS;
                 if (tentative_y < boundary) 
                 {
@@ -124,11 +125,11 @@ void update_position(Particle* particle, float delta_time)
             particle->displacement[1] += particle->velocity[1] * t;
             remaining_time -= t;
 
-            // Reflect velocity at collision
+            // Reflect velocity at collision with dampening
             if (tx < ty) {
-                particle->velocity[0] *= -0.9f; // X collision
+                particle->velocity[0] *= -DAMPENING; // X collision
             } else { 
-                particle->velocity[1] *= -0.9f; // Y collision
+                particle->velocity[1] *= -DAMPENING; // Y collision
             } 
         }
     }
@@ -183,11 +184,10 @@ void draw_particle(SDL_Renderer* renderer, int centreX, int centreY, int radius)
 * @param  count - Number of particles to create
 * @return Pointer to particle array, NULL on failure
 */
-Particle* create_particles(int count)
-{
+Particle* create_particles(int count) {
     Particle* particles = malloc(count * sizeof(Particle));
-    if (particles == NULL) {
-        printf("create_particles: memory allocation failed\n");
+    if (!particles) {
+        LOG_ERR("Particle allocation failed");
         return NULL;
     }
     
@@ -224,14 +224,12 @@ int init_SDL(void)
 * @param  void
 * @return Pointer to created SDL_Window, NULL on failure
 */
-SDL_Window* create_window(void) 
-{
-    SDL_Window* win = SDL_CreateWindow("Particles", 100, 100, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
-    if (!win)
-        printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
+SDL_Window* create_window(void) {
+    SDL_Window* win = SDL_CreateWindow("Particles", 100, 100, 
+        WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
+    if (!win) LOG_ERR("Window creation failed");
     return win;
 }
-
 /**
 * Function: create_renderer
 *
@@ -240,11 +238,10 @@ SDL_Window* create_window(void)
 * @param  win - Pointer to SDL_Window
 * @return Pointer to created SDL_Renderer, NULL on failure
 */
-SDL_Renderer* create_renderer(SDL_Window* win) 
-{
-    SDL_Renderer* ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (!ren)
-        printf("SDL_CreateRenderer Error: %s\n", SDL_GetError());
+SDL_Renderer* create_renderer(SDL_Window* win) {
+    SDL_Renderer* ren = SDL_CreateRenderer(win, -1, 
+        SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (!ren) LOG_ERR("Renderer creation failed");
     return ren;
 }
 
@@ -298,7 +295,7 @@ void game_loop(Particle* particles, SDL_Renderer* ren)
             update_position(&particles[i], delta_time);
 
         SDL_SetRenderDrawColor(ren, 255, 255, 255, 255);
-        SDL_RenderClear(ren);
+        if (SDL_RenderClear(ren) != 0) LOG_ERR("Render clear failed");
 
         SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
         for (int i = 0; i < NUMBER_OF_PARTICLES; i++) 
@@ -307,10 +304,14 @@ void game_loop(Particle* particles, SDL_Renderer* ren)
                           (int)particles[i].displacement[0],
                           (int)particles[i].displacement[1],
                           RADIUS);
-        }
+            if (SDL_GetError()[0] != '\0') { // Check for silent SDL errors
+                LOG_ERR("Drawing error");
+                SDL_ClearError();
+            }
 
-        SDL_RenderPresent(ren);
-        SDL_Delay(1000 / FPS);
+            SDL_RenderPresent(ren);
+            SDL_Delay(1000 / FPS);
+        }
     }
 }
 
