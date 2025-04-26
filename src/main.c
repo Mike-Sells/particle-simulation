@@ -4,7 +4,8 @@
 
 #define FPS 240
 #define NUMBER_OF_PARTICLES 10 
-#define GRAVITATIONAL_ACCELERATION 9.81f // acceleration due to gravity (earths gravitational constant)
+#define PIXELS_PER_METER 100.0f // 100 pixels == 1 meter
+#define GRAVITATIONAL_ACCELERATION 9.81f * PIXELS_PER_METER // acceleration due to gravity (earths gravitational constant)
 #define RADIUS 10 // radius of each particle in pixels
 #define MIN_XY 0
 #define MAX_XY 800
@@ -38,8 +39,8 @@ Particle* new_particle(void)
 
     ptr->displacement[0] = rand() % MAX_XY; /* x displacement in range of the window size */
     ptr->displacement[1] = rand() % MAX_XY; /* y displacement in range of the window size */
-    ptr->velocity[0] = ((rand() % 200) - 100) / 100.0f; /* x velocity -1f < x < 0.99f */
-    ptr->velocity[1] = ((rand() % 200) - 100) / 100.0f; /* x velocity -1f < x < 0.99f */
+    ptr->velocity[0] = ((rand() % 200) - 100) / 10.0f * PIXELS_PER_METER; /* x velocity -1f < x < 0.99f */
+    ptr->velocity[1] = ((rand() % 200) - 100) / 10.0f * PIXELS_PER_METER; /* x velocity -1f < x < 0.99f */
 
     return ptr;
 }
@@ -132,128 +133,227 @@ void draw_particle(SDL_Renderer* renderer, int centreX, int centreY, int radius)
  * Allocates an array of `count` Particle pointers, initializes each via
  * new_particle(), and on any failure frees everything and returns NULL.
  *
- * @param void
+ * @param count  Number of particles to be created
  * @return       Pointer to newly allocated Particle* array, or NULL on error
  */
-Particle** create_particles(void) {
+Particle** create_particles(int count)
+ {
     /* Allocate the pointer array */
-    Particle** particles = malloc(NUMBER_OF_PARTICLES * sizeof(Particle*));
+    Particle** particles = malloc(count * sizeof(Particle*));
         if (particles == NULL) {
-            printf(stderr, "create_particles: memory allocation for pointer array failed\n");
+            printf("create_particles: memory allocation for pointer array failed\n");
             return NULL;
         }
         /* Init each particle */
-        for (int i = 0; i < NUMBER_OF_PARTICLES; i++) // generates number of particles defined in global macro
+        for (int i = 0; i < count; i++) // generates number of particles defined in global macro
         {
             particles[i] = new_particle();
             /* for if allocation fails partway through */
             if (particles[i] == NULL) {
-                printf(stderr, "create_particles: new_particle() failed at index %d", i);
+                printf("create_particles: new_particle() failed at index %d", i);
 
-                for (int j = 0; j < i; ++j) {
+                for (int j = 0; j < i; ++j) 
+                {
                     free(particles[j]);
                 }
                 free(particles);
                 return NULL;    
             }
         }
+    return particles;
+}
+
+/**
+* Function: init_SDL
+*
+* Initializes SDL video subsystem.
+*
+* @param void
+* @return 0 on success, 1 on failure
+*/
+int init_SDL(void) 
+{
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) 
+    {
+        printf("SDL_Init Error: %s\n", SDL_GetError());
+        return 1;
+    }
+    return 0;
+}
+
+/**
+* Function: create_window
+*
+* Creates an SDL window with predefined size and title.
+*
+* @param void
+* @return Pointer to created SDL_Window, NULL on failure
+*/
+SDL_Window* create_window(void) 
+{
+    SDL_Window* win = SDL_CreateWindow("Particles", 100, 100, MAX_XY, MAX_XY, SDL_WINDOW_SHOWN);
+    if (!win)
+        printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
+    return win;
+}
+
+/**
+* Function: create_renderer
+*
+* Creates an SDL renderer linked to the provided window.
+*
+* @param win - Pointer to SDL_Window
+* @return Pointer to created SDL_Renderer, NULL on failure
+*/
+SDL_Renderer* create_renderer(SDL_Window* win) 
+{
+    SDL_Renderer* ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (!ren)
+        printf("SDL_CreateRenderer Error: %s\n", SDL_GetError());
+    return ren;
+}
+
+/**
+* Function: init_particles
+*
+* Allocates and initializes an array of particle pointers.
+*
+* @param count - Number of particles to create
+* @return Pointer to Particle* array, NULL on failure
+*/
+Particle** init_particles(int count) 
+{
+    Particle** particles = malloc(sizeof(Particle*) * count);
+    if (!particles) 
+    {
+        printf("Failed to allocate particle array.\n");
+        return NULL;
+    }
+    for (int i = 0; i < count; i++) 
+    {
+        particles[i] = new_particle();
+        if (!particles[i]) 
+        {
+            printf("Failed to create particle.\n");
+            for (int j = 0; j < i; j++) 
+                free(particles[j]);
+            free(particles);
+            return NULL;
+        }
+    }
+    return particles;
+}
+
+/**
+* Function: cleanup
+*
+* Deallocates all particles and destroys SDL resources.
+*
+* @param particles - Array of particle pointers
+* @param ren - Pointer to SDL_Renderer
+* @param win - Pointer to SDL_Window
+* @return void
+*/
+void cleanup(Particle** particles, SDL_Renderer* ren, SDL_Window* win) 
+{
+    if (particles) 
+    {
+        for (int i = 0; i < NUMBER_OF_PARTICLES; i++)
+            free(particles[i]);
+        free(particles);
+    }
+    if (ren) SDL_DestroyRenderer(ren);
+    if (win) SDL_DestroyWindow(win);
+    SDL_Quit();
+}
+
+/**
+* Function: game_loop
+*
+* Main simulation loop: handles events, updates physics,
+* renders particles, and maintains frame rate.
+*
+* @param particles - Array of particle pointers
+* @param ren - Pointer to SDL_Renderer
+* @return void
+*/
+void game_loop(Particle** particles, SDL_Renderer* ren) 
+{
+    int quit = 0;
+    SDL_Event e;
+    uint32_t previous_ticks = SDL_GetTicks();
+
+    while (!quit) 
+    {
+        while (SDL_PollEvent(&e)) 
+        {
+            if (e.type == SDL_QUIT)
+                quit = 1;
+        }
+
+        uint32_t current_ticks = SDL_GetTicks();
+        float delta_time = (current_ticks - previous_ticks) / 1000.0f;
+        previous_ticks = current_ticks;
+
+        for (int i = 0; i < NUMBER_OF_PARTICLES; i++)
+            update_position(particles[i], delta_time);
+
+        SDL_SetRenderDrawColor(ren, 255, 255, 255, 255);
+        SDL_RenderClear(ren);
+
+        SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
+        for (int i = 0; i < NUMBER_OF_PARTICLES; i++) 
+        {
+            draw_particle(ren,
+                          (int)particles[i]->displacement[0],
+                          (int)particles[i]->displacement[1],
+                          RADIUS);
+        }
+
+        SDL_RenderPresent(ren);
+        SDL_Delay(1000 / FPS);
+    }
 }
 
 /**
 * Function: main
 *
-* Initializes SDL2, creates the window and renderer, spawns particles,
-* updates and draws them every frame until the window is closed
-* 
+* Entry point of the application.
+* Initializes SDL, window, renderer, and particles,
+* runs the main loop, and performs cleanup.
+*
 * @param void
-* @return exit status code
+* @return 0 on normal exit, 1 on failure
 */
 int main(void) 
 {
-    /* Initialize SDL */
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) 
-    {
-        printf("SDL_Init Error: %s\n", SDL_GetError());
-        return 1; // exit if SDL initialisation fails
-    }
+    if (init_SDL() != 0)
+        return 1;
 
-    /* Create SDL window */
-    SDL_Window* win = SDL_CreateWindow("Particles", 100, 100, MAX_XY, MAX_XY, SDL_WINDOW_SHOWN);
-    if (win == NULL) 
+    SDL_Window* win = create_window();
+    if (!win) 
     {
-        printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
         SDL_Quit();
-        return 1; // exit if SDL window creation fails
+        return 1;
     }
 
-    /* Create SDL renderer */
-    SDL_Renderer* ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (ren == NULL) 
+    SDL_Renderer* ren = create_renderer(win);
+    if (!ren) 
     {
         SDL_DestroyWindow(win);
-        printf("SDL_CreateRenderer Error: %s\n", SDL_GetError());
         SDL_Quit();
-        return 1; // exit if SDL renderer creation fails
+        return 1;
     }
 
-    /* Allocate particle array with a predefined number of particles */
-    allocate_particle_array();
-
-    int quit = 0; // exit flag
-    SDL_Event e; // event handeler
-    uint previous_ticks = SDL_GetTicks(); //  
-
-    /* Main simulation loop */
-    while (!quit)
+    Particle** particles = init_particles(NUMBER_OF_PARTICLES);
+    if (!particles) 
     {
-        /* Handle quit event */
-        while (SDL_PollEvent(&e)) 
-        {
-            if (e.type == SDL_QUIT) 
-            {
-                quit = 1;
-            }
-        }
-
-        /* calculates the time between frames */
-        uint32_t current_ticks = SDL_GetTicks();
-        float delta_time = (current_ticks - previous_ticks) / 1000.0f; // in seconds
-        previous_ticks = current_ticks;
-
-        /* Update all particles */
-        for (int i = 0; i < NUMBER_OF_PARTICLES; i++) 
-        {
-            update_position(particles[i], delta_time);
-        }
-
-        // Clear screen
-        SDL_SetRenderDrawColor(ren, 255, 255, 255, 255);
-        SDL_RenderClear(ren);
-
-        /* Draw all particles */
-        SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
-        for (int i = 0; i < NUMBER_OF_PARTICLES; i++) 
-        {
-            draw_particle(ren,
-                            (int)particles[i]->displacement[0],
-                            (int)particles[i]->displacement[1],
-                            RADIUS);
-        }
-
-        SDL_RenderPresent(ren);
-        SDL_Delay(1000 / FPS); // delay to maintain frame rate
+        cleanup(NULL, ren, win);
+        return 1;
     }
 
-    /* MALLOC deallocation */
-    for (int i = 0; i < NUMBER_OF_PARTICLES; i++) 
-    {
-        free(particles[i]);
-    }
-    free(particles);
+    game_loop(particles, ren);
 
-    SDL_DestroyRenderer(ren);
-    SDL_DestroyWindow(win);
-    SDL_Quit();
-
+    cleanup(particles, ren, win);
     return 0;
 }
