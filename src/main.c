@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>   
 #include <SDL2/SDL.h> // Graphics lib
 
 #define FPS 240
@@ -7,8 +8,8 @@
 #define PIXELS_PER_METER 100.0f // 100 pixels == 1 meter
 #define GRAVITATIONAL_ACCELERATION 9.81f * PIXELS_PER_METER // acceleration due to gravity (earths gravitational constant)
 #define RADIUS 10 // radius of each particle in pixels
-#define MIN_XY 0
-#define MAX_XY 800
+#define WINDOW_HEIGHT 800
+#define WINDOW_WIDTH 1200
 
 /**
 * struct: Particle
@@ -21,68 +22,116 @@ typedef struct {
 } Particle;
 
 /**
-* Function: new_particle
+* Function: init_particle
 *
-* Generates a pointer to a distinct particle with random displacement and velocity
+* Initializes a particle with random displacement and velocity
 *
-* @param  void 
-* @return pointer to the generated particle || null if malloc failed
+* @param  particle - Pointer to the particle to initialize
+* @return void
 */
-Particle* new_particle(void) 
+void init_particle(Particle* particle) 
 {
-    Particle* ptr = malloc(sizeof(Particle));
-    if (ptr == NULL) 
-    {
-        printf("MALLOC FAILED\n");
-        return NULL;
-    }
-
-    ptr->displacement[0] = rand() % MAX_XY; /* x displacement in range of the window size */
-    ptr->displacement[1] = rand() % MAX_XY; /* y displacement in range of the window size */
-    ptr->velocity[0] = ((rand() % 200) - 100) / 10.0f * PIXELS_PER_METER; /* x velocity -1f < x < 0.99f */
-    ptr->velocity[1] = ((rand() % 200) - 100) / 10.0f * PIXELS_PER_METER; /* x velocity -1f < x < 0.99f */
-
-    return ptr;
+    particle->displacement[0] = rand() % WINDOW_WIDTH; /* x displacement in range of the window size */
+    particle->displacement[1] = rand() % WINDOW_HEIGHT; /* y displacement in range of the window size */
+    particle->velocity[0] = ((rand() % 200) - 100) / 10.0f * PIXELS_PER_METER; /* x velocity -1f < x < 0.99f */
+    particle->velocity[1] = ((rand() % 200) - 100) / 10.0f * PIXELS_PER_METER; /* x velocity -1f < x < 0.99f */
 }
 
 /**
 * Function: update_position
 *
-* Updates the position and velocity of the particle based on the time step and applies gravity.
-* The particle's position is updated using its current velocity, and the velocity is updated
-* with the gravitational acceleration over the given time step.
-* The function also handles boundary conditions by inverting the velocity if the particle hits
-* the edges of the window. 
+* Updates the position and velocity of a particle based on its velocity,
+* gravitational acceleration, and possible collisions with window boundaries.
+* 
+* The function handles continuous collision detection by estimating when during
+* the frame a collision would occur and updating accordingly, reflecting the 
+* particle's velocity upon collision.
+* 
+* Limits maximum iterations to prevent infinite loops in complex cases.
 *
-* @param  particle Pointer to the particle to be updated
-* @param  delta_time Time step (in seconds or frames) to ensure proper velocity/acceleration calculation
+* @param particle Pointer to the particle to be updated
+* @param delta_time Elapsed time in seconds since the last frame
 * @return void
 */
 void update_position(Particle* particle, float delta_time) 
 {
-    /* Apply gravity to vertical component of velocity */
+    // Apply gravity once per frame (simplification)
     particle->velocity[1] += GRAVITATIONAL_ACCELERATION * delta_time;
 
-    /* Update position  of particle*/
-    particle->displacement[0] += particle->velocity[0] * delta_time;
-    particle->displacement[1] += particle->velocity[1] * delta_time;
+    float remaining_time = delta_time;
+    const int max_iterations = 5; // Prevent infinite loops
 
-    /* Ensure particle cannot go beyond the bounds in the x position*/
-    if (particle->displacement[0] < MIN_XY + RADIUS) {
-        particle->displacement[0] = MIN_XY + RADIUS;
-        particle->velocity[0] = -particle->velocity[0];
-    } else if (particle->displacement[0] > MAX_XY - RADIUS) {
-        particle->displacement[0] = MAX_XY - RADIUS;
-        particle->velocity[0] = -particle->velocity[0];
-    }
+    for (int iter = 0; iter < max_iterations && remaining_time > 0; iter++) 
+    {
+        float tentative_x = particle->displacement[0] + particle->velocity[0] * remaining_time;
+        float tentative_y = particle->displacement[1] + particle->velocity[1] * remaining_time;
 
-    /* Ensure the particle cannot go beyond the bounds in the y position */
-    if (particle->displacement[1] < MIN_XY + RADIUS) {
-        particle->displacement[1] = MIN_XY + RADIUS;
-        particle->velocity[1] = -particle->velocity[1];
-    } else if (particle->displacement[1] > MAX_XY - RADIUS) {
-        particle->displacement[1] = MAX_XY - RADIUS;
-        particle->velocity[1] = -particle->velocity[1];
+        // Calculate time to collision for X and Y axes
+        float tx = INFINITY, ty = INFINITY;
+
+        // X-axis collision check
+        if (particle->velocity[0] != 0) 
+        {
+            if (particle->velocity[0] > 0) 
+            {
+                float boundary = WINDOW_WIDTH - RADIUS;
+                if (tentative_x > boundary) 
+                {
+                    tx = (boundary - particle->displacement[0]) / particle->velocity[0];
+                }
+            } else {
+                float boundary = RADIUS;
+                if (tentative_x < boundary) 
+                {
+                    tx = (boundary - particle->displacement[0]) / particle->velocity[0];
+                }
+            }
+        }
+
+        // Y-axis collision check
+        if (particle->velocity[1] != 0) 
+        {
+            if (particle->velocity[1] > 0) 
+            {
+                float boundary = WINDOW_HEIGHT - RADIUS;
+                if (tentative_y > boundary) 
+                {
+                    ty = (boundary - particle->displacement[1]) / particle->velocity[1];
+                }
+            } 
+            else 
+            {
+                float boundary = RADIUS;
+                if (tentative_y < boundary) 
+                {
+                    ty = (boundary - particle->displacement[1]) / particle->velocity[1];
+                }
+            }
+        }
+
+        // Find earliest collision time
+        float t = fminf(tx, ty);
+
+        if (t > remaining_time) 
+        {
+            // No collision: move full remaining time
+            particle->displacement[0] += particle->velocity[0] * remaining_time;
+            particle->displacement[1] += particle->velocity[1] * remaining_time;
+            remaining_time = 0;
+        } 
+        else 
+        {
+            // Move to collision point
+            particle->displacement[0] += particle->velocity[0] * t;
+            particle->displacement[1] += particle->velocity[1] * t;
+            remaining_time -= t;
+
+            // Reflect velocity at collision
+            if (tx < ty) 
+                particle->velocity[0] *= -1; // X collision
+            else 
+                particle->velocity[1] *= -1; // Y collision
+        }
     }
 }
 
@@ -128,38 +177,25 @@ void draw_particle(SDL_Renderer* renderer, int centreX, int centreY, int radius)
 }
 
 /**
- * Function: create_particles
- *
- * Allocates an array of `count` Particle pointers, initializes each via
- * new_particle(), and on any failure frees everything and returns NULL.
- *
- * @param  count  Number of particles to be created
- * @return Pointer to newly allocated Particle* array, or NULL on error
- */
-Particle** create_particles(int count)
- {
-    /* Allocate the pointer array */
-    Particle** particles = malloc(count * sizeof(Particle*));
-        if (particles == NULL) {
-            printf("create_particles: memory allocation for pointer array failed\n");
-            return NULL;
-        }
-        /* Init each particle */
-        for (int i = 0; i < count; i++) // generates number of particles defined in global macro
-        {
-            particles[i] = new_particle();
-            /* for if allocation fails partway through */
-            if (particles[i] == NULL) {
-                printf("create_particles: new_particle() failed at index %d", i);
-
-                for (int j = 0; j < i; ++j) 
-                {
-                    free(particles[j]);
-                }
-                free(particles);
-                return NULL;    
-            }
-        }
+* Function: create_particles
+*
+* Allocates a contiguous block of particles and initializes them
+*
+* @param  count - Number of particles to create
+* @return Pointer to particle array, NULL on failure
+*/
+Particle* create_particles(int count)
+{
+    Particle* particles = malloc(count * sizeof(Particle));
+    if (particles == NULL) {
+        printf("create_particles: memory allocation failed\n");
+        return NULL;
+    }
+    
+    for (int i = 0; i < count; i++) {
+        init_particle(&particles[i]);
+    }
+    
     return particles;
 }
 
@@ -191,7 +227,7 @@ int init_SDL(void)
 */
 SDL_Window* create_window(void) 
 {
-    SDL_Window* win = SDL_CreateWindow("Particles", 100, 100, MAX_XY, MAX_XY, SDL_WINDOW_SHOWN);
+    SDL_Window* win = SDL_CreateWindow("Particles", 100, 100, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
     if (!win)
         printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
     return win;
@@ -214,54 +250,18 @@ SDL_Renderer* create_renderer(SDL_Window* win)
 }
 
 /**
-* Function: init_particles
-*
-* Allocates and initializes an array of particle pointers.
-*
-* @param  count - Number of particles to create
-* @return Pointer to Particle* array, NULL on failure
-*/
-Particle** init_particles(int count) 
-{
-    Particle** particles = malloc(sizeof(Particle*) * count);
-    if (!particles) 
-    {
-        printf("Failed to allocate particle array.\n");
-        return NULL;
-    }
-    for (int i = 0; i < count; i++) 
-    {
-        particles[i] = new_particle();
-        if (!particles[i]) 
-        {
-            printf("Failed to create particle.\n");
-            for (int j = 0; j < i; j++) 
-                free(particles[j]);
-            free(particles);
-            return NULL;
-        }
-    }
-    return particles;
-}
-
-/**
 * Function: cleanup
 *
-* Deallocates all particles and destroys SDL resources.
+* Deallocates particles and destroys SDL resources.
 *
-* @param  particles - Array of particle pointers
+* @param  particles - Pointer to particle array
 * @param  ren - Pointer to SDL_Renderer
 * @param  win - Pointer to SDL_Window
 * @return void
 */
-void cleanup(Particle** particles, SDL_Renderer* ren, SDL_Window* win) 
+void cleanup(Particle* particles, SDL_Renderer* ren, SDL_Window* win) 
 {
-    if (particles) 
-    {
-        for (int i = 0; i < NUMBER_OF_PARTICLES; i++)
-            free(particles[i]);
-        free(particles);
-    }
+    if (particles) free(particles);
     if (ren) SDL_DestroyRenderer(ren);
     if (win) SDL_DestroyWindow(win);
     SDL_Quit();
@@ -273,11 +273,11 @@ void cleanup(Particle** particles, SDL_Renderer* ren, SDL_Window* win)
 * Main simulation loop: handles events, updates physics,
 * renders particles, and maintains frame rate.
 *
-* @param  particles - Array of particle pointers
+* @param  particles - Pointer to particle array
 * @param  ren - Pointer to SDL_Renderer
 * @return void
 */
-void game_loop(Particle** particles, SDL_Renderer* ren) 
+void game_loop(Particle* particles, SDL_Renderer* ren) 
 {
     int quit = 0;
     SDL_Event e;
@@ -296,7 +296,7 @@ void game_loop(Particle** particles, SDL_Renderer* ren)
         previous_ticks = current_ticks;
 
         for (int i = 0; i < NUMBER_OF_PARTICLES; i++)
-            update_position(particles[i], delta_time);
+            update_position(&particles[i], delta_time);
 
         SDL_SetRenderDrawColor(ren, 255, 255, 255, 255);
         SDL_RenderClear(ren);
@@ -305,8 +305,8 @@ void game_loop(Particle** particles, SDL_Renderer* ren)
         for (int i = 0; i < NUMBER_OF_PARTICLES; i++) 
         {
             draw_particle(ren,
-                          (int)particles[i]->displacement[0],
-                          (int)particles[i]->displacement[1],
+                          (int)particles[i].displacement[0],
+                          (int)particles[i].displacement[1],
                           RADIUS);
         }
 
@@ -345,7 +345,7 @@ int main(void)
         return 1;
     }
 
-    Particle** particles = init_particles(NUMBER_OF_PARTICLES);
+    Particle* particles = create_particles(NUMBER_OF_PARTICLES);
     if (!particles) 
     {
         cleanup(NULL, ren, win);
