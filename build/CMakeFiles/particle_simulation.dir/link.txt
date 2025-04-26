@@ -1,1 +1,1 @@
-/usr/bin/cc -Wl,--dependency-file=CMakeFiles/particle_simulation.dir/link.d CMakeFiles/particle_simulation.dir/src/main.c.o -o particle_simulation  /usr/lib/libSDL2main.a /usr/lib/libSDL2-2.0.so.0.3200.54
+/usr/bin/cc -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/particle_simulation.dir/link.d CMakeFiles/particle_simulation.dir/src/main.c.o -o particle_simulation  /usr/lib/libSDL2main.a /usr/lib/libSDL2-2.0.so.0.3200.54

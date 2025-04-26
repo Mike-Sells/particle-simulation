@@ -25,7 +25,7 @@ typedef struct {
 *
 * Generates a pointer to a distinct particle with random displacement and velocity
 *
-* @param void 
+* @param  void 
 * @return pointer to the generated particle || null if malloc failed
 */
 Particle* new_particle(void) 
@@ -54,8 +54,8 @@ Particle* new_particle(void)
 * The function also handles boundary conditions by inverting the velocity if the particle hits
 * the edges of the window. 
 *
-* @param particle Pointer to the particle to be updated
-* @param delta_time Time step (in seconds or frames) to ensure proper velocity/acceleration calculation
+* @param  particle Pointer to the particle to be updated
+* @param  delta_time Time step (in seconds or frames) to ensure proper velocity/acceleration calculation
 * @return void
 */
 void update_position(Particle* particle, float delta_time) 
@@ -91,10 +91,10 @@ void update_position(Particle* particle, float delta_time)
 *
 * Draws a circle to the window using midpoint circle algorithm of radius passed as a paramter
 *
-* @param renderer rendering tool part of the SDL2 lib
-* @param centreX xDisplacement of the circle
-* @param centreY yDisplacement of the circle
-* @param radius width of the circle / 2
+* @param  renderer rendering tool part of the SDL2 lib
+* @param  centreX xDisplacement of the circle
+* @param  centreY yDisplacement of the circle
+* @param  radius width of the circle / 2
 * @return void
 **/
 void draw_particle(SDL_Renderer* renderer, int centreX, int centreY, int radius)
@@ -133,8 +133,8 @@ void draw_particle(SDL_Renderer* renderer, int centreX, int centreY, int radius)
  * Allocates an array of `count` Particle pointers, initializes each via
  * new_particle(), and on any failure frees everything and returns NULL.
  *
- * @param count  Number of particles to be created
- * @return       Pointer to newly allocated Particle* array, or NULL on error
+ * @param  count  Number of particles to be created
+ * @return Pointer to newly allocated Particle* array, or NULL on error
  */
 Particle** create_particles(int count)
  {
@@ -168,7 +168,7 @@ Particle** create_particles(int count)
 *
 * Initializes SDL video subsystem.
 *
-* @param void
+* @param  void
 * @return 0 on success, 1 on failure
 */
 int init_SDL(void) 
@@ -186,7 +186,7 @@ int init_SDL(void)
 *
 * Creates an SDL window with predefined size and title.
 *
-* @param void
+* @param  void
 * @return Pointer to created SDL_Window, NULL on failure
 */
 SDL_Window* create_window(void) 
@@ -202,7 +202,7 @@ SDL_Window* create_window(void)
 *
 * Creates an SDL renderer linked to the provided window.
 *
-* @param win - Pointer to SDL_Window
+* @param  win - Pointer to SDL_Window
 * @return Pointer to created SDL_Renderer, NULL on failure
 */
 SDL_Renderer* create_renderer(SDL_Window* win) 
@@ -218,7 +218,7 @@ SDL_Renderer* create_renderer(SDL_Window* win)
 *
 * Allocates and initializes an array of particle pointers.
 *
-* @param count - Number of particles to create
+* @param  count - Number of particles to create
 * @return Pointer to Particle* array, NULL on failure
 */
 Particle** init_particles(int count) 
@@ -249,9 +249,9 @@ Particle** init_particles(int count)
 *
 * Deallocates all particles and destroys SDL resources.
 *
-* @param particles - Array of particle pointers
-* @param ren - Pointer to SDL_Renderer
-* @param win - Pointer to SDL_Window
+* @param  particles - Array of particle pointers
+* @param  ren - Pointer to SDL_Renderer
+* @param  win - Pointer to SDL_Window
 * @return void
 */
 void cleanup(Particle** particles, SDL_Renderer* ren, SDL_Window* win) 
@@ -273,8 +273,8 @@ void cleanup(Particle** particles, SDL_Renderer* ren, SDL_Window* win)
 * Main simulation loop: handles events, updates physics,
 * renders particles, and maintains frame rate.
 *
-* @param particles - Array of particle pointers
-* @param ren - Pointer to SDL_Renderer
+* @param  particles - Array of particle pointers
+* @param  ren - Pointer to SDL_Renderer
 * @return void
 */
 void game_loop(Particle** particles, SDL_Renderer* ren) 
@@ -322,7 +322,7 @@ void game_loop(Particle** particles, SDL_Renderer* ren)
 * Initializes SDL, window, renderer, and particles,
 * runs the main loop, and performs cleanup.
 *
-* @param void
+* @param  void
 * @return 0 on normal exit, 1 on failure
 */
 int main(void) 
