@@ -4,8 +4,9 @@
 #include <SDL2/SDL.h> // Graphics lib
 
 #define LOG_ERR(msg) fprintf(stderr, "ERROR: %s | SDL: %s\n", msg, SDL_GetError())
-#define FPS 240
-#define NUMBER_OF_PARTICLES 100
+#define SQUARE(n) n*n
+#define FPS 60
+#define NUMBER_OF_PARTICLES 150 
 #define PIXELS_PER_METER 100.0f // 100 pixels == 1 meter
 #define GRAVITATIONAL_ACCELERATION (9.81f * PIXELS_PER_METER) // acceleration due to gravity (earths gravitational constant)
 #define DAMPENING 0.9f // causes collisions to be inelastic
@@ -135,14 +136,79 @@ void update_position(Particle* particle, float delta_time)
     }
 }
 
+/**
+* Function: resolve_collision
+*
+* Resolves the collision between two particles if the distance between their centres is less than the sum of their radii
+* 
+* @param  a the first partcile 
+* @param  b the second particle
+* @return void
+*/
+void resolve_collision(Particle* a, Particle* b) {
+    float delta_x = b->displacement[0] - a->displacement[0];
+    float delta_y = b->displacement[1] - a->displacement[1];
+    float distance_sq = delta_x*delta_x + delta_y*delta_y;
+    float min_distance = 2 * RADIUS;
+    float min_distance_sq = min_distance * min_distance;
+
+    // Only process collision if particles are overlapping or very close
+    if (distance_sq >= min_distance_sq) return;
+
+    float distance = sqrtf(distance_sq);
+    
+    // Handle potential division by zero for perfectly aligned particles
+    if (distance < 0.0001f) {
+        delta_x = 0.1f; // Arbitrary small push
+        delta_y = 0.0f;
+        distance = 0.1f;
+    }
+
+    // Calculate normalized collision vector
+    float nx = delta_x / distance;
+    float ny = delta_y / distance;
+
+    // Calculate relative velocity
+    float dvx = b->velocity[0] - a->velocity[0];
+    float dvy = b->velocity[1] - a->velocity[1];
+    
+    // Calculate relative velocity in terms of the normal vector
+    float velocity_along_normal = dvx * nx + dvy * ny;
+
+    // Do not resolve if particles are separating
+    if (velocity_along_normal > 0) return;
+
+    // Calculate impulse scalar
+    float restitution = DAMPENING;
+    float impulse = -(1.0f + restitution) * velocity_along_normal;
+    impulse /= 2.0f; // Equal mass assumption
+
+    // Apply impulse
+    a->velocity[0] -= impulse * nx;
+    a->velocity[1] -= impulse * ny;
+    b->velocity[0] += impulse * nx;
+    b->velocity[1] += impulse * ny;
+
+    // Positional correction to prevent sticking
+    float penetration = min_distance - distance;
+    const float percent = 0.2f; // Percentage of penetration to correct
+    const float slop = 0.01f; // Small allowed penetration
+    float correction = fmaxf(penetration - slop, 0.0f) / 2.0f * percent;
+
+    a->displacement[0] -= correction * nx;
+    a->displacement[1] -= correction * ny;
+    b->displacement[0] += correction * nx;
+    b->displacement[1] += correction * ny;
+}
+
 /** 
-* Function: DrawFilledCircle
+* Function: draw_particle
 *
 * Draws a circle to the window using midpoint circle algorithm of radius passed as a paramter
 *
 * @param  renderer rendering tool part of the SDL2 lib
-* @param  centreX xDisplacement of the circle
-* @param  centreY yDisplacement of the circle
+* @param  centreX X displacement of the circle
+* @param  centreY Y displacement of the circle
 * @param  radius width of the circle / 2
 * @return void
 **/
@@ -278,39 +344,54 @@ void game_loop(Particle* particles, SDL_Renderer* ren)
     int quit = 0;
     SDL_Event e;
     uint32_t previous_ticks = SDL_GetTicks();
+    const uint32_t frame_delay = 1000 / FPS; // Delay per frame in ms
 
     while (!quit) 
     {
+        uint32_t frame_start = SDL_GetTicks();
+
+        // Handle events
         while (SDL_PollEvent(&e)) 
         {
             if (e.type == SDL_QUIT)
                 quit = 1;
         }
 
+        // Calculate delta time
         uint32_t current_ticks = SDL_GetTicks();
         float delta_time = (current_ticks - previous_ticks) / 1000.0f;
         previous_ticks = current_ticks;
 
+        // Update physics
         for (int i = 0; i < NUMBER_OF_PARTICLES; i++)
             update_position(&particles[i], delta_time);
 
+        // Resolve collisions
+        for (int i = 0; i < NUMBER_OF_PARTICLES; ++i) {
+            for (int j = i + 1; j < NUMBER_OF_PARTICLES; ++j) {
+                resolve_collision(&particles[i], &particles[j]);
+            }
+        }
+
+        // Rendering
         SDL_SetRenderDrawColor(ren, 255, 255, 255, 255);
-        if (SDL_RenderClear(ren) != 0) LOG_ERR("Render clear failed");
+        SDL_RenderClear(ren);
 
         SDL_SetRenderDrawColor(ren, 255, 0, 0, 255);
         for (int i = 0; i < NUMBER_OF_PARTICLES; i++) 
         {
             draw_particle(ren,
-                          (int)particles[i].displacement[0],
-                          (int)particles[i].displacement[1],
-                          RADIUS);
-            if (SDL_GetError()[0] != '\0') { // Check for silent SDL errors
-                LOG_ERR("Drawing error");
-                SDL_ClearError();
-            }
+                         (int)particles[i].displacement[0],
+                         (int)particles[i].displacement[1],
+                         RADIUS);
+        }
 
-            SDL_RenderPresent(ren);
-            SDL_Delay(1000 / FPS);
+        SDL_RenderPresent(ren);
+
+        // Frame rate control
+        uint32_t frame_time = SDL_GetTicks() - frame_start;
+        if (frame_delay > frame_time) {
+            SDL_Delay(frame_delay - frame_time);
         }
     }
 }
